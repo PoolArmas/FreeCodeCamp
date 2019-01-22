@@ -1,0 +1,58 @@
+
+public class EXTAccountingFTPUtil {
+	
+	private static CLogger log = CLogger.getCLogger(EXTAccountingFTPUtil.class);
+	
+	  private EXTAccountingFTPUtil(){ 
+		  throw new IllegalAccessError();
+	  }
+
+	  public static boolean sendTxt(File txtFile){			
+		return logginFTP( "xx.xx.xx.xx" ,"USRCONEX" ,"XXXXXX", txtFile);
+	  }
+
+	static boolean logginFTP(String url, String user, String password,File txtName) {
+		FTPClient ftpClient = new FTPClient();
+		try {
+			ftpClient.connect(url);
+			if (!ftpClient.login(user, password)) {
+				log.log(Level.INFO, "Could not connect");
+			}
+			ftpClient.changeWorkingDirectory("/Interfaces");
+			ftpClient.enterLocalPassiveMode();		
+			ftpClient.setFileType(org.apache.commons.net.ftp.FTP.BINARY_FILE_TYPE);          
+			return putFiles(ftpClient, txtName);
+			
+		} catch (IOException ex) {
+			log.log(Level.WARNING,(ex.getMessage()));
+		} finally {
+			try {
+				if (ftpClient.isConnected()) {
+					ftpClient.logout();
+					ftpClient.disconnect();					
+				}
+			} catch (IOException ex) {
+				log.log(Level.WARNING,(ex.getMessage()));
+			}
+		}
+		return false;
+	}
+
+	static boolean putFiles(FTPClient ftpClient, File txtFile) throws IOException {	
+		boolean sent = putFileSend(txtFile, ftpClient);
+			if (sent) {
+				log.log(Level.INFO, "Successful file submission: " + txtFile.getName());
+			} else {
+				log.log(Level.INFO, "The file could not be sent: " + txtFile.getName());
+			}
+			return sent;
+	}
+
+	static boolean putFileSend(File txtFile, FTPClient ftpClient) throws IOException {
+		InputStream inputStream = new FileInputStream(txtFile);
+		boolean done = ftpClient.storeFile(txtFile.getName(), inputStream);
+		inputStream.close();
+		return done;
+	}
+	
+}
